@@ -64,11 +64,12 @@ int main(int argc, char** argv) {
   if (argc < 3) {
     cerr << "Usage: " << argv[0] << " [input_file] [sample_rate]"; return 2;
   }
+  
+  double buffer[1024];
   int sample_rate = atoi(argv[2]);
   int count = read_file(argv[1], buffer); 
   
   // Read data file
-  double buffer[1024];
   CplxArray data = *real_to_complex(buffer, count);
   
   // Run FFT algorithm with loaded data
