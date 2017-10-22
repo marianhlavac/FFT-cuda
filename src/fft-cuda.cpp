@@ -10,8 +10,8 @@ typedef valarray<Complex> CplxArray;
 
 /**
  * Recursive, in-place Fast-Fourier Transformation.
+ * https://rosettacode.org/wiki/Fast_Fourier_transform#C.2B.2B
  */
-// https://rosettacode.org/wiki/Fast_Fourier_transform#C.2B.2B
 void fft(CplxArray& x) {
     const size_t N = x.size();
     if (N <= 1) return;
@@ -77,8 +77,9 @@ int main(int argc, char** argv) {
   
   // Print out the computed data
   cout.precision(4);
+  cout << "frequency, value" << endl;
   for (int i = 0; i < count / 2; i++) {
-      cout << i << "\t" << i * ((double)sample_rate/count) << "-" << (i+1) * ((double)sample_rate/count) << "Hz\t" << abs(data[i]) << endl;
+      cout << i * ((double)sample_rate/count) << "," << abs(data[i]) << endl;
   }
   
   return 0;
