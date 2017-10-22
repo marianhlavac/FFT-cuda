@@ -19,3 +19,7 @@ Then the run script does everything.
 ```
  $ run.sh [input_data_file] [sampling_rate]
 ```
+
+## Screenshot
+
+![Fancy screenshot](fancyscreenshot.png)
