@@ -3,6 +3,7 @@
 #include <fstream>
 #include <valarray>
 #include <chrono>
+#include <vector>
  
 using namespace std;
  
@@ -32,10 +33,10 @@ void fft(CplxArray& x) {
 /**
  * Converts array of real numbers to complex numbers array.
  */
-CplxArray* real_to_complex(double* real_array, int length) {
-  CplxArray* ary = new CplxArray(length);
+CplxArray* real_to_complex(vector<double> real_array) {
+  CplxArray* ary = new CplxArray(real_array.size());
   
-  for (int i = 0; i < length; i++) {
+  for (int i = 0; i < real_array.size(); i++) {
     (*ary)[i] = complex<double>(real_array[i], 0.0);
   }
   
@@ -45,19 +46,19 @@ CplxArray* real_to_complex(double* real_array, int length) {
 /**
  * Reads numeric data from a file.
  */
-int read_file(char* filename, double* out_ary) {
+void read_file(char* filename, vector<double>& out) {
   ifstream file;
-  int pos = 0;
   file.open(filename);
   
   if (file.is_open()) {
     while (!file.eof()) {
-      file >> out_ary[pos++];
+      double val;
+      file >> val;
+      out.push_back(val);
     }
   }
   
   file.close();
-  return pos;
 }
 
 int main(int argc, char** argv) {
@@ -66,22 +67,23 @@ int main(int argc, char** argv) {
     cerr << "Usage: " << argv[0] << " [input_file] [output_file] [sample_rate]"; return 2;
   }
   
-  double buffer[1024];
-  int sample_rate = atoi(argv[3]);
-  int count = read_file(argv[1], buffer); 
+  vector<double> buffer;
+  int sample_rate = atoi(argv[3]); 
   
   // Read data file
-  CplxArray data = *real_to_complex(buffer, count);
+  read_file(argv[1], buffer);
+  int count = buffer.size();
+  CplxArray data = *real_to_complex(buffer);
   
   // Start the stopwatch
-  auto start = chrono::high_resolution_clock::now();
+  chrono::high_resolution_clock::time_point start = chrono::high_resolution_clock::now();
   
   // Run FFT algorithm with loaded data
   fft(data);
   
   // Print out the total elapsed time
-  auto finish = chrono::high_resolution_clock::now();
-  auto microseconds = chrono::duration_cast<std::chrono::microseconds>(finish-start);
+  chrono::high_resolution_clock::time_point finish = chrono::high_resolution_clock::now();
+  chrono::high_resolution_clock::duration microseconds = chrono::duration_cast<std::chrono::microseconds>(finish-start);
   cout << "Program took " << microseconds.count() << "µs to finish." << endl;
   
   // Save the computed data
