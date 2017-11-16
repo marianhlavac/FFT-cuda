@@ -2,6 +2,7 @@
 #include <iostream>
 #include <fstream>
 #include <valarray>
+#include <chrono>
  
 using namespace std;
  
@@ -62,25 +63,36 @@ int read_file(char* filename, double* out_ary) {
 int main(int argc, char** argv) {
   // Deal with program arguments
   if (argc < 3) {
-    cerr << "Usage: " << argv[0] << " [input_file] [sample_rate]"; return 2;
+    cerr << "Usage: " << argv[0] << " [input_file] [output_file] [sample_rate]"; return 2;
   }
   
   double buffer[1024];
-  int sample_rate = atoi(argv[2]);
+  int sample_rate = atoi(argv[3]);
   int count = read_file(argv[1], buffer); 
   
   // Read data file
   CplxArray data = *real_to_complex(buffer, count);
   
+  // Start the stopwatch
+  auto start = chrono::high_resolution_clock::now();
+  
   // Run FFT algorithm with loaded data
   fft(data);
   
-  // Print out the computed data
-  cout.precision(4);
-  cout << "frequency, value" << endl;
+  // Print out the total elapsed time
+  auto finish = chrono::high_resolution_clock::now();
+  auto microseconds = chrono::duration_cast<std::chrono::microseconds>(finish-start);
+  cout << "Program took " << microseconds.count() << "µs to finish." << endl;
+  
+  // Save the computed data
+  ofstream outfile;
+  outfile.open (argv[2]);
+  outfile.precision(4);
+  outfile << "frequency, value" << endl;
   for (int i = 0; i < count / 2; i++) {
-      cout << i * ((double)sample_rate/count) << "," << abs(data[i]) << endl;
+      outfile << i * ((double)sample_rate/count) << "," << abs(data[i]) << endl;
   }
+  outfile.close();
   
   return 0;
 }
