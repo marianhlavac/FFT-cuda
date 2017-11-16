@@ -7,8 +7,8 @@ using namespace std;
 /**
  * Generates sinusoid oscillation.
  */
-double gen_freq(double time, double freq, double phase) {
-  return sin(2.0f * (time * M_PI + phase) * freq );
+double gen_freq(double time, double freq, double phase, double amplitude) {
+  return sin(2.0f * (time * M_PI + phase) * freq ) * amplitude;
 }
 
 /**
@@ -17,7 +17,8 @@ double gen_freq(double time, double freq, double phase) {
  */
 double gen_func(double time) {
   // -!- Change the generator function here:
-  return gen_freq(time, 10.0f, 0);
+  return gen_freq(time, 12000.0f, 0, 0.05f) + gen_freq(time, 55.0f, 0, 0.375f) 
+    + gen_freq(time, 56.0f, 0, 0.375f) + gen_freq(time, 13420.0f, 0, 0.012f);
 }
 
 int main(int argc, char** argv) {
