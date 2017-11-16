@@ -2,7 +2,7 @@
 #include <iostream>
 #include <fstream>
 #include <valarray>
-#include <chrono>
+#include <time.h>
 #include <vector>
  
 using namespace std;
@@ -76,15 +76,15 @@ int main(int argc, char** argv) {
   CplxArray data = *real_to_complex(buffer);
   
   // Start the stopwatch
-  chrono::high_resolution_clock::time_point start = chrono::high_resolution_clock::now();
+  clock_t t;
+	t = clock();
   
   // Run FFT algorithm with loaded data
   fft(data);
   
   // Print out the total elapsed time
-  chrono::high_resolution_clock::time_point finish = chrono::high_resolution_clock::now();
-  chrono::high_resolution_clock::duration microseconds = chrono::duration_cast<std::chrono::microseconds>(finish-start);
-  cout << "Program took " << microseconds.count() << "µs to finish." << endl;
+  t = clock() - t;
+  cout << "Program took " << t*1000.0/CLOCKS_PER_SEC << "ms to finish." << endl;
   
   // Save the computed data
   ofstream outfile;
