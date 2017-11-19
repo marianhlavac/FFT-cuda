@@ -9,8 +9,13 @@ else
   g++ -o bin/create-data src/create-data.cpp 
 fi
 
-echo "Compiling FFT-cuda binaries..."
-g++ -o bin/fft-cuda src/fft-cuda.cpp 
-
+if [ "$ENV_LOCAL" = "1" ]
+then
+  echo "Compiling OpenACC binaries on local machine..."
+  /opt/pgi/osx86-64/2017/bin/pgc++ -ta=multicore -fast -Minfo=all,ccff -o bin/fft-cuda-acc src/fft-cuda.cpp
+else
+  echo "Compiling FFT-cuda binaries..."
+  g++ -o bin/fft-cuda src/fft-cuda.cpp -g
+fi
 
 echo "Compiled."

@@ -14,10 +14,13 @@ typedef valarray<Complex> CplxArray;
  * In-place Iterative Fast Fourier Transformation.
  */
 CplxArray fft(CplxArray& x) {
+  const size_t n = x.size();
+  CplxArray r(n);
+  
   #pragma acc kernels 
   {
-    const size_t n = x.size();
-    CplxArray r(n);
+    
+    
   	int s = log2(n);
   	
     // Bit-reversal reordering
@@ -44,9 +47,9 @@ CplxArray fft(CplxArray& x) {
   			r[j + k + m / 2] = u - t;
   		}
   	}
+  }
     
   	return r;
-  }
 }
 
 /**
