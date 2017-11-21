@@ -14,15 +14,22 @@ using namespace std;
 typedef complex<double> Complex;
 typedef valarray<Complex> CplxArray;
 
+double** twodim_double_ary(size_t n) {
+  double** ary = new double*[n];
+  for (int i = 0; i < n; i++) {
+      ary[i] = new double[2];
+  }
+  return ary;
+}
+
 /**
  * In-place Iterative Fast Fourier Transformation.
  */
-CplxArray fft(CplxArray& x) {
-  const size_t n = x.size();
-  CplxArray r(n);
+double** fft(double** x, size_t n) {
+  double** r = twodim_double_ary(n);
 
-  #pragma acc parallel 
-  #pragma acc data copy(r[0:n]) 
+  #pragma acc kernels 
+  #pragma acc data copy(r[0:n][0:2]) 
   {
   	int s = log2(n);
   	
@@ -36,8 +43,9 @@ CplxArray fft(CplxArray& x) {
   			k = k * 2 + (j & 1);
         j >>= 1;
       }
-
-  		r[k] = x[i];
+      
+  		r[k][0] = x[i][0];
+  		r[k][1] = x[i][1];
   	}
     
     #pragma acc loop
@@ -48,28 +56,46 @@ CplxArray fft(CplxArray& x) {
   		for (int j = 0; j < n; j += m) {
         #pragma acc loop
         for(int k = 0; k < m/2; k++) {
-          Complex t = polar(1.0, -2 * M_PI * k / m);
-    			Complex u = r[j + k];
-    			t *= r[j + k + m / 2];
+          // Is PGP dumb, or what? This is ugly. TODO: fix
+          double* t = new double[2], *u = new double[2], *tr = new double[2];
+          t[0] = cos((2.0*M_PI*k)/(1.0*m));
+          t[1] = -sin((2.0*M_PI*k)/(1.0*m));
+    			u[0] = r[j + k][0];
+          u[1] = r[j + k][1];
+          
+          double* rz = r[j + k + m / 2];
+          
+          tr[0] = t[0] * rz[0] - t[1] * rz[1];
+    			tr[1] = t[0] * rz[1] + t[1] * rz[0];
+          
+          delete[] t;
+          t = tr;
 
-    			r[j + k] = u + t; 
-    			r[j + k + m / 2] = u - t;
+          r[j + k][0] = u[0] + t[0]; 
+    			r[j + k][1] = u[1] + t[1]; 
+
+          rz[0] = u[0] - t[0];
+    			rz[1] = u[1] - t[1];
+          
+          delete[] tr;
+          delete[] u;
     		}
       }
   	}
   }
-    
+
   return r;
 }
 
 /**
  * Converts array of real numbers to complex numbers array.
  */
-CplxArray* real_to_complex(vector<double> real_array) {
-  CplxArray* ary = new CplxArray(real_array.size());
-  
+double** real_to_complex(vector<double> real_array) {
+  double** ary = new double*[real_array.size()];
   for (int i = 0; i < real_array.size(); i++) {
-    (*ary)[i] = complex<double>(real_array[i], 0.0);
+      ary[i] = new double[2];
+      ary[i][0] = real_array[i];
+      ary[i][1] = 0.0;
   }
   
   return ary;
@@ -108,7 +134,7 @@ int main(int argc, char** argv) {
   // Read data file
   read_file(argv[1], buffer);
   int count = buffer.size();
-  CplxArray data = *real_to_complex(buffer);
+  double** data = real_to_complex(buffer);
   
   // Is power of 2?
   if (count & (count-1)) {
@@ -129,21 +155,15 @@ int main(int argc, char** argv) {
   
   
   // Run FFT algorithm with loaded data
-  CplxArray result = fft(data);
+  double** result = fft(data, count);
   
   // Log the elapsed time
-  ofstream logfile;
-  logfile.open("log.txt");
-  time_t now = time(0);
-  logfile << ctime(&now) << argv[1] << endl;
   #ifdef STAR
     const double seconds = omp_get_wtime() - start;
   #else
   	t = clock() - t;
     const double seconds = (double)t / CLOCKS_PER_SEC;
   #endif
-  
-  logfile << "Program took " << seconds << " secs to finish." << endl;
   cout << "Program took " << seconds << " secs to finish." << endl;
   
   // Save the computed data
@@ -152,7 +172,7 @@ int main(int argc, char** argv) {
   outfile.precision(4);
   outfile << "frequency, value" << endl;
   for (int i = 0; i < count / 2; i++) {
-      outfile << i * ((double)sample_rate/count) << "," << abs(result[i]) << endl;
+      outfile << i * ((double)sample_rate/count) << "," << abs(result[i][0]) << endl;
   }
   outfile.close();
   
