@@ -28,13 +28,12 @@ double** twodim_double_ary(size_t n) {
 double** fft(double** x, size_t n) {
   double** r = twodim_double_ary(n);
 
-  #pragma acc kernels 
   #pragma acc data copy(r[0:n][0:2]) 
   {
   	int s = log2(n);
   	
     // Bit-reversal reordering
-    #pragma acc loop
+    #pragma acc parallel loop
   	for (int i = 0; i <= n-1; i++) {
   		int j = i, k = 0;
       
@@ -48,7 +47,7 @@ double** fft(double** x, size_t n) {
   		r[k][1] = x[i][1];
   	}
     
-    #pragma acc loop
+    #pragma acc parallel loop
   	for (int i = 1; i <= s; i++) {
   		int m = 1 << i;
       
@@ -57,7 +56,7 @@ double** fft(double** x, size_t n) {
         #pragma acc loop
         for(int k = 0; k < m/2; k++) {
           // Is PGP dumb, or what? This is ugly. TODO: fix
-          double* t = new double[2], *u = new double[2], *tr = new double[2];
+          double t[2], u[2], tr[2];
           t[0] = cos((2.0*M_PI*k)/(1.0*m));
           t[1] = -sin((2.0*M_PI*k)/(1.0*m));
     			u[0] = r[j + k][0];
@@ -68,17 +67,14 @@ double** fft(double** x, size_t n) {
           tr[0] = t[0] * rz[0] - t[1] * rz[1];
     			tr[1] = t[0] * rz[1] + t[1] * rz[0];
           
-          delete[] t;
-          t = tr;
+          t[0] = tr[0];
+          t[1] = tr[1];
 
           r[j + k][0] = u[0] + t[0]; 
     			r[j + k][1] = u[1] + t[1]; 
 
           rz[0] = u[0] - t[0];
     			rz[1] = u[1] - t[1];
-          
-          delete[] tr;
-          delete[] u;
     		}
       }
   	}
