@@ -1,0 +1,13 @@
+----- NA GPU:
+
+Data info:
+Sample count: 8192
+Sample rate: 44100
+For num_gangs(1) program took 529394 us to finish.
+
+----- NA CPU:
+
+Data info:
+Sample count: 8192
+Sample rate: 44100
+Program took 10077 us to finish.
