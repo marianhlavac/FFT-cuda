@@ -14,8 +14,8 @@ template<int T>
 float* fft(float* __restrict__ x, size_t n) {
   size_t n2 = n * 2;
   int s = log2(n);
-  
   float* r = new float[n2];
+  
   #pragma acc data copy(x[0:n]) create(r[0:n2]) copyout(r[0:n])
   {
     // Bit-reversal reordering
