@@ -5,6 +5,7 @@
 #include <vector>
 #include <cmath>
 #include <dirent.h>
+#include <cstring>
 
 using namespace std;
 
