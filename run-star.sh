@@ -5,4 +5,6 @@ mkdir -p bin
 #$ -o .
 #$ -pe ompi 1
 #$ -q gpu_02.q
-./bin/fft-cuda-acc $1 bin/outp.dat $2
+./bin/fft-cuda-acc data/50Hz/
+./bin/fft-cuda-acc data/50Hz+500Hz/
+./bin/fft-cuda-acc data/500Hz+505Hz+12000Hz
