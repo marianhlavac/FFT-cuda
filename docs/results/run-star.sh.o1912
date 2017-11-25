@@ -1,3 +1,4 @@
+folder,samples,sample_rate,num_gangs,elapsed_us
 data/50Hz/,1024,44100,2,1309
 data/50Hz/,1024,44100,4,843
 data/50Hz/,1024,44100,8,568
