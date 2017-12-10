@@ -9,7 +9,7 @@
 
 using namespace std;
 
-#define CUDA_N_THR 128
+#define CUDA_N_THR 32
 
 // Complex numbers data type
 typedef float2 Cplx;
@@ -34,7 +34,7 @@ __global__ void bitrev_reorder(Cplx* __restrict__ r, Cplx* __restrict__ d, int s
   int id = blockIdx.x * CUDA_N_THR + threadIdx.x;
   int j = id, k = 0;
   
-  // ASK: Nejde reverse bitu GPUckem?
+  // ASK: N--ejde reverse bitu GPUck--em? jde
   for (int l = 1; l <= s; l++) {
     k = k * 2 + (j & 1);
     j >>= 1;
@@ -46,6 +46,7 @@ __global__ void bitrev_reorder(Cplx* __restrict__ r, Cplx* __restrict__ d, int s
 __global__ void inplace_fft(Cplx* __restrict__ r, int m, int n) {
   int j = (blockIdx.x * CUDA_N_THR + threadIdx.x) * m;
   
+  // ASK: Kernely v kernelech?
   for (int k = 0; k < m / 2; k++) {
     if (j + k + m / 2 < n) { 
       Cplx t, u;
@@ -84,13 +85,18 @@ void fft(Cplx* __restrict__ d, size_t n) {
   // Iterative FFT
   for (int i = 1; i <= s; i++) {
     int m = 1 << i;
-    inplace_fft<<<ceil(n / m / CUDA_N_THR), CUDA_N_THR / m>>>(r, m, n);
+    cout << "s:" << s << ", m:" << m<< ", n/m:" << n/m << endl;
+    inplace_fft<<<ceil((float)n / m / CUDA_N_THR), CUDA_N_THR>>>(r, m, n);
   }
   
   // Copy data from GPU
   Cplx* result;
   result = (Cplx*)malloc(data_size / 2);
+  // ASK: 
   cudaMemcpy(result, r, data_size / 2, cudaMemcpyDeviceToHost);
+  
+  cudaFree(r);
+  cudaFree(dn);
 }
 
 /**
@@ -131,16 +137,16 @@ void save_results(const char* filename, Cplx* result, size_t count, int sample_r
 
 void compute(Cplx* buffer, size_t count, int sample_rate, const char* filename) {
   // Start the stopwatch
-  // auto start = chrono::high_resolution_clock::now();
+  auto start = chrono::high_resolution_clock::now();
   
   // Run FFT algorithm with loaded data
   fft(buffer, count);
   
   // Log the elapsed time
-  // auto finish = chrono::high_resolution_clock::now();
-  // auto microseconds = chrono::duration_cast<std::chrono::microseconds>(finish-start);
-  // 
-  // cout << "elapsed" << microseconds.count() << "ms" << endl;
+  auto finish = chrono::high_resolution_clock::now();
+  auto microseconds = chrono::duration_cast<std::chrono::microseconds>(finish-start);
+  
+  cout << "elapsed " << microseconds.count() << "us" << endl;
   
   // Save the computed data
   save_results(filename, buffer, count, sample_rate);
@@ -166,11 +172,13 @@ int main(int argc, char** argv) {
   srand (time(NULL));
   
   // Deal with program arguments
-  if (argc < 2) {
-    cerr << "Usage: " << argv[0] << " [input_folder]"; return 2;
-  }
+  // if (argc < 2) {
+  //   cerr << "Usage: " << argv[0] << " [input_folder]"; return 2;
+  // }
   
-  compute_file("data/50Hz", "data/50Hz/128smp@44100.dat", "128", 44100);
+  // ASK: Jak to inicializovat?
+  cudaFree(0);
+  compute_file("data/50Hz", "data/50Hz/8192smp@44100.dat", "8192", 44100);
 
   // Compute all files in folder
   // DIR* dirp = opendir(argv[1]);
