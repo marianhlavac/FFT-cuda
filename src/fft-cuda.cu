@@ -9,8 +9,6 @@
 
 using namespace std;
 
-#define N_THR_TESTS 8
-#define BAL_TESTS   8
 #define N_REPEAT    3
 
 // Complex numbers data type
@@ -88,8 +86,7 @@ void fft(Cplx* __restrict__ d, size_t n, size_t threads, int balance) {
   
   // Bit-reversal reordering
   int s = log2(n);
-  size_t blocks = threads == 0 ? 0 : ceil(n / threads);
-  bitrev_reorder<<<blocks, threads>>>(r, dn, s, threads);
+  bitrev_reorder<<<ceil(n / threads), threads>>>(r, dn, s, threads);
   
   // Synchronize
   cudaDeviceSynchronize();
@@ -98,13 +95,11 @@ void fft(Cplx* __restrict__ d, size_t n, size_t threads, int balance) {
   for (int i = 1; i <= s; i++) {
     int m = 1 << i;
     if (n/m > balance) {
-      blocks = threads == 0 ? 0 : ceil((float)n / m / threads);
-      inplace_fft_outer<<<blocks, threads>>>(r, m, n, threads);
+      inplace_fft_outer<<<ceil((float)n / m / threads), threads>>>(r, m, n, threads);
     } else {
       for (int j = 0; j < n; j += m) {
         float repeats = m / 2;
-        blocks = threads == 0 ? 0 : ceil(repeats / threads);
-        inplace_fft<<<blocks, threads>>>(r, j, m, n, threads);
+        inplace_fft<<<ceil(repeats / threads), threads>>>(r, j, m, n, threads);
       }
     }
   }
@@ -228,13 +223,15 @@ int main(int argc, char** argv) {
       int smp = atoi(samples.c_str());
   
       // Compute for all set parameters
-      for (int th = 0; th < 1024; th += 1024 / N_THR_TESTS)
-      for (int bal = 0; bal < smp / 2; bal += smp / (2 * N_THR_TESTS))
-      for (int r = 0; r < N_REPEAT; r++) {
-        char fname[512];
-        strcpy(fname, fold);
-        strcat(strcat(fname, "/"), epdf->d_name);
-        compute_file(fname, atoi(sr.c_str()), th, bal);
+      for (int th = 0; th <= 1024; th <<= 1) {
+        if (th == 0) th = 1;
+        for (int bal = 2; bal <= smp / 2; bal <<= 1)
+        for (int r = 0; r < N_REPEAT; r++) {
+          char fname[512];
+          strcpy(fname, fold);
+          strcat(strcat(fname, "/"), epdf->d_name);
+          compute_file(fname, atoi(sr.c_str()), th, bal);
+        }
       }
     }
   }
