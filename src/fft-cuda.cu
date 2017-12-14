@@ -9,9 +9,9 @@
 
 using namespace std;
 
-#define N_THR_TESTS 4
+#define N_THR_TESTS 8
 #define BAL_TESTS   8
-#define N_REPEAT    2
+#define N_REPEAT    3
 
 // Complex numbers data type
 typedef float2 Cplx;
@@ -88,7 +88,8 @@ void fft(Cplx* __restrict__ d, size_t n, size_t threads, int balance) {
   
   // Bit-reversal reordering
   int s = log2(n);
-  bitrev_reorder<<<ceil(n / threads), threads>>>(r, dn, s, threads);
+  size_t blocks = threads == 0 ? 0 : ceil(n / threads);
+  bitrev_reorder<<<blocks, threads>>>(r, dn, s, threads);
   
   // Synchronize
   cudaDeviceSynchronize();
@@ -97,11 +98,13 @@ void fft(Cplx* __restrict__ d, size_t n, size_t threads, int balance) {
   for (int i = 1; i <= s; i++) {
     int m = 1 << i;
     if (n/m > balance) {
-      inplace_fft_outer<<<ceil((float)n / m / threads), threads>>>(r, m, n, threads);
+      blocks = threads == 0 ? 0 : ceil((float)n / m / threads);
+      inplace_fft_outer<<<blocks, threads>>>(r, m, n, threads);
     } else {
       for (int j = 0; j < n; j += m) {
         float repeats = m / 2;
-        inplace_fft<<<ceil(repeats / threads), threads>>>(r, j, m, n, threads);
+        blocks = threads == 0 ? 0 : ceil(repeats / threads);
+        inplace_fft<<<blocks, threads>>>(r, j, m, n, threads);
       }
     }
   }
@@ -225,8 +228,8 @@ int main(int argc, char** argv) {
       int smp = atoi(samples.c_str());
   
       // Compute for all set parameters
-      for (int th = 1; th < 1024; th += 1024 / N_THR_TESTS)
-      for (int bal = 1; bal < smp / 2; bal += smp / (2 * N_THR_TESTS))
+      for (int th = 0; th < 1024; th += 1024 / N_THR_TESTS)
+      for (int bal = 0; bal < smp / 2; bal += smp / (2 * N_THR_TESTS))
       for (int r = 0; r < N_REPEAT; r++) {
         char fname[512];
         strcpy(fname, fold);
