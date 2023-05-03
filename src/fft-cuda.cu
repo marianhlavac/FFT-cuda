@@ -39,7 +39,7 @@ __global__ void bitrev_reorder(Cplx* __restrict__ r, Cplx* __restrict__ d, int s
  * Inner part of FFT loop. Contains the procedure itself.
  */
 __device__ void inplace_fft_inner(Cplx* __restrict__ r, int j, int k, int m, int n) {
-  if (j + k + m / 2 < n) { 
+  if (j + k + m / 2 < n && k < m / 2) { 
     Cplx t, u;
     
     t.x = __cosf((2.0 * M_PI * k) / (1.0 * m));
